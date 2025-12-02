@@ -1,0 +1,15 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+// Mock table để seed test
+model Mock {
+  id    Int     @id @default(autoincrement())
+  name  String
+  price Float
+}
