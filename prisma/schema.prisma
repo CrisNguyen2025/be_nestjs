@@ -4,12 +4,12 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-    url      = env("DATABASE_URL")
+  url      = env("DATABASE_URL")
 }
 
-// Mock table để seed test
-model Mock {
-  id    Int     @id @default(autoincrement())
+// Sample table
+model Sample {
+  id    Int    @id @default(autoincrement())
   name  String
   price Float
 }

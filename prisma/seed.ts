@@ -5,16 +5,16 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('Seeding database...');
 
-  await prisma.mock.createMany({
+  await prisma.sample.createMany({
     data: [
-      { name: 'Mock A', price: 10.5 },
-      { name: 'Mock B', price: 20 },
-      { name: 'Mock C', price: 15.75 },
+      { name: 'Sample A', price: 10.5 },
+      { name: 'Sample B', price: 20 },
+      { name: 'Sample C', price: 15.75 },
     ],
   });
 
-  const allMocks = await prisma.mock.findMany();
-  console.log('Seeded Mocks:', allMocks);
+  const allSamples = await prisma.sample.findMany();
+  console.log('Seeded Samples:', allSamples);
 }
 
 main()
