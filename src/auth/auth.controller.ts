@@ -5,6 +5,7 @@ import { CreateUserDto } from './dto/create-user';
 import { LoginDto } from './dto/login.dto';
 
 import { IResponse } from 'src/common/dto/response.dto';
+import { CheckEmailDto, CheckEmailResponseDto } from './dto/check-email.dto';
 import { LogoutDto } from './dto/logout.dto';
 import { RefreshTokenDto, TokenResponseDto } from './dto/refresh-token.dto';
 import { JwtAuthGuard } from './guard/jwt-auth.guard';
@@ -119,7 +120,10 @@ export class AuthController {
   // -------- Utilities --------
   @Post('check-email')
   @ApiOperation({ summary: 'Check if email exists' })
-  async checkEmail(@Body('email') email: string) {
-    return this.utilService.checkEmail(email);
+  @ApiResponse({ status: 200, type: CheckEmailResponseDto })
+  async checkEmail(
+    @Body() dto: CheckEmailDto,
+  ): Promise<IResponse<CheckEmailResponseDto>> {
+    return this.utilService.checkEmail(dto.email);
   }
 }
