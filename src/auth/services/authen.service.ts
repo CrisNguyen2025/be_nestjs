@@ -2,6 +2,7 @@ import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import Redis from 'ioredis';
+import { SessionHelper } from 'src/common/helpers/session.helper';
 import { TokenHelper } from 'src/common/helpers/token.helper';
 import { CreateUserDto } from '../dto/create-user';
 import { LoginDto } from '../dto/login.dto';
@@ -58,6 +59,13 @@ export class AuthenticationService {
       user.id.toString(),
       jti,
       refresh_token,
+    );
+
+    // Enforce max 2 sessions
+    await SessionHelper.enforceSessionLimit(
+      this.redisClient,
+      user.id.toString(),
+      2,
     );
 
     // 3️⃣ Return tokens
