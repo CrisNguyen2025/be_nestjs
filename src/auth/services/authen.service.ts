@@ -5,7 +5,6 @@ import Redis from 'ioredis';
 import { TokenHelper } from 'src/common/helpers/token.helper';
 import { CreateUserDto } from '../dto/create-user';
 import { LoginDto } from '../dto/login.dto';
-import { LogoutDto } from '../dto/logout.dto';
 import { RegisterDto } from '../dto/register.dto';
 import { AuthRepository } from '../repositories/auth.repository';
 
@@ -118,14 +117,19 @@ export class AuthenticationService {
     };
   }
 
-  async logout(data: LogoutDto): Promise<{ message: string }> {
-    const { userId, refresh_token } = data;
+  async logout(
+    userId: string,
+    refresh_token: string,
+  ): Promise<{ message: string }> {
     const key = `refresh:${userId}:${refresh_token}`;
+    console.log('🚀 ~ AuthenticationService ~ logout ~ key:', key);
 
     const deleted = await this.redisClient.del(key);
 
     if (!deleted) {
-      return { message: 'Refresh token not found or already invalidated' };
+      return {
+        message: 'Refresh token not found or already invalidated',
+      };
     }
 
     return { message: 'Logged out successfully' };
