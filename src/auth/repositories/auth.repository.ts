@@ -61,4 +61,28 @@ export class AuthRepository implements IAuthRepository {
       },
     });
   }
+
+  // Select password for verification
+  async findByIdWithPassword(userId: string) {
+    const id = parseInt(userId, 10);
+    return this.prisma.user.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        password: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+  }
+
+  async updatePassword(userId: string, hashedPassword: string) {
+    const id = parseInt(userId, 10);
+    return this.prisma.user.update({
+      where: { id },
+      data: { password: hashedPassword },
+    });
+  }
 }

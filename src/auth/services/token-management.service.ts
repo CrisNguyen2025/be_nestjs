@@ -1,12 +1,16 @@
-import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import * as bcrypt from 'bcrypt';
 import Redis from 'ioredis';
 import { TokenHelper } from 'src/common/helpers/token.helper';
 import { ChangePasswordDto } from '../dto/change-pass.dto';
-import { RefreshTokenDto } from '../dto/refresh-token.dto';
+import { RefreshTokenDto, TokenResponseDto } from '../dto/refresh-token.dto';
 import { AuthRepository } from '../repositories/auth.repository';
-
-import { TokenResponseDto } from '../dto/refresh-token.dto';
 
 type User = any;
 
@@ -94,10 +98,23 @@ export class TokenManagementService {
     userId: string,
     dto: ChangePasswordDto,
   ): Promise<{ message: string }> {
-    const user = await this.authRepo.findById(userId);
-    if (!user) throw new Error('User not found');
-    // TODO: verify old password & hash new password
-    await this.authRepo.update(userId, { password: dto.newPassword });
+    const user = await this.authRepo.findByIdWithPassword(userId);
+    if (!user) throw new UnauthorizedException('User not found');
+
+    // 1️⃣ Verify current password
+    const isMatch = await bcrypt.compare(dto.currentPassword, user.password);
+    if (!isMatch)
+      throw new BadRequestException({
+        message: 'Current password is incorrect',
+        key: 'invalid_current_password',
+      });
+
+    // 2️⃣ Hash new password
+    const hashed = await bcrypt.hash(dto.newPassword, 10);
+
+    // 3️⃣ Update password in DB
+    await this.authRepo.updatePassword(userId, hashed);
+
     return { message: 'Password changed successfully' };
   }
 }

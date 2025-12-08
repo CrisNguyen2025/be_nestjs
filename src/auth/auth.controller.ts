@@ -4,6 +4,7 @@ import { ChangePasswordDto } from './dto/change-pass.dto';
 import { CreateUserDto } from './dto/create-user';
 import { LoginDto } from './dto/login.dto';
 
+import { IResponse } from 'src/common/dto/response.dto';
 import { LogoutDto } from './dto/logout.dto';
 import { RefreshTokenDto, TokenResponseDto } from './dto/refresh-token.dto';
 import { JwtAuthGuard } from './guard/jwt-auth.guard';
@@ -105,11 +106,14 @@ export class AuthController {
   }
 
   @Post('change-password')
-  @ApiOperation({ summary: 'Change user password' })
+  @UseGuards(JwtAuthGuard)
   async changePassword(
-    @Body() body: { userId: string; dto: ChangePasswordDto },
-  ) {
-    return this.tokenService.changePassword(body.userId, body.dto);
+    @Req() req: any,
+    @Body() dto: ChangePasswordDto,
+  ): Promise<IResponse<{ message: string }>> {
+    const userId = req.user.userId;
+    const result = await this.tokenService.changePassword(userId, dto);
+    return { success: true, data: result };
   }
 
   // -------- Utilities --------
