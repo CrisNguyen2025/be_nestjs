@@ -84,9 +84,9 @@ export class TokenManagementService {
     };
   }
 
-  async getMe(user: { userId: string; email: string }): Promise<User> {
+  async getMe(user: { userId: string }): Promise<User> {
     const foundUser = await this.authRepo.findById(user.userId);
-    if (!foundUser) throw new Error('User not found');
+    if (!foundUser) throw new UnauthorizedException('User not found');
     return foundUser;
   }
 

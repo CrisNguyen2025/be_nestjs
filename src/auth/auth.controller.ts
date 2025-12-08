@@ -1,12 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  Post,
-  Req,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ChangePasswordDto } from './dto/change-pass.dto';
 import { CreateUserDto } from './dto/create-user';
@@ -104,13 +96,12 @@ export class AuthController {
     return this.tokenService.refreshToken(refreshTokenDto);
   }
 
-  @Get('me/:userId')
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get current user info' })
-  async getMe(
-    @Param('userId') userId: string,
-    @Body() body: { email: string },
-  ) {
-    return this.tokenService.getMe({ userId, email: body.email });
+  async getMe(@Req() req: any) {
+    const userId = req.user.userId;
+    return this.tokenService.getMe({ userId });
   }
 
   @Post('change-password')
