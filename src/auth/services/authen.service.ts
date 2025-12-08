@@ -2,6 +2,7 @@ import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import Redis from 'ioredis';
+import { IResponse } from 'src/common/dto/response.dto';
 import { SessionHelper } from 'src/common/helpers/session.helper';
 import { TokenHelper } from 'src/common/helpers/token.helper';
 import { CreateUserDto } from '../dto/create-user';
@@ -21,7 +22,7 @@ export class AuthenticationService {
 
   async loginWithCredentials(
     data: LoginDto,
-  ): Promise<Tokens & { user: Omit<User, 'password'> }> {
+  ): Promise<IResponse<{ user: Omit<User, 'password'>; tokens: Tokens }>> {
     const user = await this.authRepo.findByEmail(data.email);
 
     if (!user) {
@@ -70,9 +71,11 @@ export class AuthenticationService {
 
     // 3️⃣ Return tokens
     return {
-      user: safeUser,
-      access_token,
-      refresh_token,
+      success: true,
+      data: {
+        user: safeUser,
+        tokens: { access_token, refresh_token },
+      },
     };
   }
 
@@ -132,17 +135,28 @@ export class AuthenticationService {
 
   async logout(
     userId: string,
-    refresh_token: string,
+    refreshToken: string,
   ): Promise<{ message: string }> {
-    const key = `refresh:${userId}:${refresh_token}`;
-    console.log('🚀 ~ AuthenticationService ~ logout ~ key:', key);
+    let payload: any;
+    try {
+      payload = await this.jwtService.verifyAsync(refreshToken, {
+        secret: process.env.JWT_REFRESH_SECRET,
+      });
+    } catch (err) {
+      // Token không hợp lệ vẫn có thể coi là "logged out"
+      return { message: 'Refresh token not found or already invalidated' };
+    }
 
+    const jti = payload.jti;
+    if (!jti) {
+      return { message: 'Refresh token not found or already invalidated' };
+    }
+
+    const key = `refresh:${userId}:${jti}`;
     const deleted = await this.redisClient.del(key);
 
     if (!deleted) {
-      return {
-        message: 'Refresh token not found or already invalidated',
-      };
+      return { message: 'Refresh token not found or already invalidated' };
     }
 
     return { message: 'Logged out successfully' };
