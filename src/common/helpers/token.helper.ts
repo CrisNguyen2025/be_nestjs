@@ -18,7 +18,7 @@ export class TokenHelper {
 
     const refresh_token = jwtService.sign(
       { sub: userId, email, jti },
-      { expiresIn: '7d' },
+      { secret: process.env.JWT_REFRESH_SECRET, expiresIn: '7d' },
     );
 
     return { access_token, refresh_token, jti };

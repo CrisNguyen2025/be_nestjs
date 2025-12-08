@@ -13,6 +13,7 @@ import { CreateUserDto } from './dto/create-user';
 import { LoginDto } from './dto/login.dto';
 
 import { LogoutDto } from './dto/logout.dto';
+import { RefreshTokenDto, TokenResponseDto } from './dto/refresh-token.dto';
 import { JwtAuthGuard } from './guard/jwt-auth.guard';
 import { AuthenticationService } from './services/authen.service';
 import { TokenManagementService } from './services/token-management.service';
@@ -80,9 +81,27 @@ export class AuthController {
   }
 
   @Post('refresh-token')
-  @ApiOperation({ summary: 'Refresh JWT token' })
-  async refreshToken(@Body() body: { userId: string; refreshToken: string }) {
-    return this.tokenService.refreshToken(body.userId, body.refreshToken);
+  @ApiOperation({
+    summary: 'Refresh JWT token',
+    description: 'Lấy access token mới bằng refresh token cũ',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Token được refresh thành công',
+    type: TokenResponseDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Token không hợp lệ',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad Request - Refresh token không hợp lệ',
+  })
+  async refreshToken(
+    @Body() refreshTokenDto: RefreshTokenDto,
+  ): Promise<TokenResponseDto> {
+    return this.tokenService.refreshToken(refreshTokenDto);
   }
 
   @Get('me/:userId')

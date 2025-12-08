@@ -45,17 +45,22 @@ export class AuthenticationService {
 
     const { password, ...safeUser } = user;
 
-    // Generate tokens
-    const { access_token, refresh_token } = TokenHelper.generateTokens(
+    // 1️⃣ Generate tokens
+    const { access_token, refresh_token, jti } = TokenHelper.generateTokens(
       this.jwtService,
       user.id,
       user.email,
     );
 
-    // Save refresh token to Redis
-    const key = `refresh:${user.id}:${refresh_token}`;
-    await this.redisClient.set(key, 'valid', 'EX', 60 * 60 * 24 * 7); // 7 days
+    // 2️⃣ Store hashed refresh token in Redis
+    await TokenHelper.storeRefreshToken(
+      this.redisClient,
+      user.id.toString(),
+      jti,
+      refresh_token,
+    );
 
+    // 3️⃣ Return tokens
     return {
       user: safeUser,
       access_token,
