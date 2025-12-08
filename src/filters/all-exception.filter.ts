@@ -1,15 +1,15 @@
 import {
   ArgumentsHost,
+  BadRequestException,
   Catch,
   ExceptionFilter,
   HttpException,
-  BadRequestException,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { IResponse } from 'src/common/dto/response.dto';
-import { handleValidationException } from './exception-handlers/validation.handler';
 import { handleHttpException } from './exception-handlers/http.handler';
 import { handleUnknownException } from './exception-handlers/unknown.handler';
+import { handleValidationException } from './exception-handlers/validation.handler';
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {

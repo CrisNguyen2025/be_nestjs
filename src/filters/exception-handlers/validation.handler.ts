@@ -12,16 +12,26 @@ export function handleValidationException(
 ): ExceptionResponse {
   const status = exceptionStatus;
 
-  const errors = Array.isArray(res.message) ? res.message : [];
+  let errors: ApiError[] = [];
 
-  const mappedErrors = errors.map((e: any) => ({
-    message: e.message,
-    field: e.field || null,
-    key: e.key || null,
-  }));
+  if (Array.isArray(res.message)) {
+    errors = res.message.map((e: any) => ({
+      message: e.message,
+      field: e.field || null,
+      key: e.key || null,
+    }));
+  } else if (typeof res.message === 'string') {
+    errors = [
+      {
+        message: res.message,
+        field: res.field || null,
+        key: 'bad_request',
+      },
+    ];
+  }
 
   return {
     status,
-    errors: mappedErrors,
+    errors,
   };
 }

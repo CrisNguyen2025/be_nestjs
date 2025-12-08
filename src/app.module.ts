@@ -1,11 +1,19 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
+import { ConfigModule } from '@nestjs/config';
+import { AuthModule } from './auth/auth.module';
 import { SampleModule } from './modules/sample/sample.module';
+import { RedisModule } from './redis/redis.module';
 
 @Module({
-  imports: [SampleModule],
+  imports: [
+    RedisModule,
+    AuthModule,
+    SampleModule,
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+  ],
   controllers: [],
-  providers: [AppService],
+  providers: [],
 })
 export class AppModule {}

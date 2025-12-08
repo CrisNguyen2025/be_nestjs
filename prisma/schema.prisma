@@ -13,3 +13,18 @@ model Sample {
   name  String
   price Float
 }
+
+enum Role {
+  USER
+  ADMIN
+  STAFF
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  role      Role     @default(USER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
