@@ -55,11 +55,12 @@ export class AuthenticationService {
     );
 
     // 2️⃣ Store hashed refresh token in Redis
-    await TokenHelper.storeRefreshToken(
+    await SessionHelper.addSession(
       this.redisClient,
       user.id.toString(),
       jti,
       refresh_token,
+      7 * 24 * 60 * 60,
     );
 
     // Enforce max 2 sessions
