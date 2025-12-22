@@ -6,6 +6,7 @@ import { LoginDto } from './dto/login.dto';
 
 import { IResponse } from 'src/common/dto/response.dto';
 import { CheckEmailDto, CheckEmailResponseDto } from './dto/check-email.dto';
+import { ForceLogoutDto } from './dto/force-logout.dto';
 import { LogoutDto } from './dto/logout.dto';
 import { RefreshTokenDto, TokenResponseDto } from './dto/refresh-token.dto';
 import { JwtAuthGuard } from './guard/jwt-auth.guard';
@@ -72,6 +73,17 @@ export class AuthController {
   async logout(@Body() dto: LogoutDto, @Req() req: any) {
     const userId = req.user.userId;
     return this.authService.logout(userId, dto.refresh_token);
+  }
+
+  @Post('force-logout')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Force logout from all devices' })
+  @ApiResponse({
+    status: 200,
+    description: 'Logged out from all devices successfully',
+  })
+  async forceLogout(@Body() dto: ForceLogoutDto) {
+    return this.authService.forceLogout(dto.userId);
   }
 
   @Post('refresh-token')

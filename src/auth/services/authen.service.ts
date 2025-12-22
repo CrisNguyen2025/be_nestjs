@@ -161,4 +161,15 @@ export class AuthenticationService {
 
     return { message: 'Logged out successfully' };
   }
+
+  async forceLogout(userId: string): Promise<{ message: string }> {
+    const pattern = `refresh:${userId}:*`;
+    const keys = await this.redisClient.keys(pattern);
+
+    if (keys.length > 0) {
+      await this.redisClient.del(keys);
+    }
+
+    return { message: 'Logged out from all devices successfully' };
+  }
 }

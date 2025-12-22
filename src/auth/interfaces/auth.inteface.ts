@@ -30,6 +30,7 @@ export interface IAuthService {
   ): Promise<Tokens & { user: User }>;
 
   // Token & User Management
+  forceLogout(userId: string): Promise<{ message: string }>;
   logout(userId: string, refresh_token: string): Promise<{ message: string }>;
   refreshToken(userId: string, refresh_token: string): Promise<Tokens>;
   getMe(user: { userId: string; email: string }): Promise<User>;
