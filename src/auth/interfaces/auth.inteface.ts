@@ -39,6 +39,13 @@ export interface IAuthService {
     dto: ChangePasswordDto,
   ): Promise<{ message: string }>;
 
+  //forgot-password
+  forgotPassword(email: string): Promise<{ message: string }>;
+  //reset-password
+  //verify-email
+  //confirm-email
+  //sessions
+
   // Utilities
   checkEmail(email: string): Promise<{ message: string; value: number }>;
 }

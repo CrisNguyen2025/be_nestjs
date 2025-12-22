@@ -7,6 +7,10 @@ import { LoginDto } from './dto/login.dto';
 import { IResponse } from 'src/common/dto/response.dto';
 import { CheckEmailDto, CheckEmailResponseDto } from './dto/check-email.dto';
 import { ForceLogoutDto } from './dto/force-logout.dto';
+import {
+  ForgotPasswordDto,
+  ForgotPasswordResponseDto,
+} from './dto/forgot-password.dto';
 import { LogoutDto } from './dto/logout.dto';
 import { RefreshTokenDto, TokenResponseDto } from './dto/refresh-token.dto';
 import { JwtAuthGuard } from './guard/jwt-auth.guard';
@@ -127,6 +131,19 @@ export class AuthController {
     const userId = req.user.userId;
     const result = await this.tokenService.changePassword(userId, dto);
     return { success: true, data: result };
+  }
+
+  @Post('forgot-password')
+  @ApiOperation({
+    summary: 'Request password reset (auto-generated new password)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'New password sent successfully (simulated)',
+    type: ForgotPasswordResponseDto,
+  })
+  async forgotPassword(@Body() dto: ForgotPasswordDto) {
+    return this.authService.forgotPassword(dto.email);
   }
 
   // -------- Utilities --------

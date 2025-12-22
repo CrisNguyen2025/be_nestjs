@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { Role } from '@prisma/client';
-import * as bcrypt from 'bcryptjs';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateUserDto } from '../dto/create-user';
 import { IAuthRepository } from '../interfaces/auth.inteface'; // Đã cập nhật IAuthRepository
@@ -16,13 +15,11 @@ export class AuthRepository implements IAuthRepository {
 
   // 2. Create user with ACCOUNT/PASSWORD (registerWithCredentials)
   async createUser(data: CreateUserDto) {
-    // Hash password before saving to repository
-    const hashedPassword = await bcrypt.hash(data.password, 10);
-
+    // Password should be hashed by the Service layer before reaching here
     return this.prisma.user.create({
       data: {
         email: data.email,
-        password: hashedPassword,
+        password: data.password,
         role: data.role || Role.USER,
       },
     });
@@ -48,12 +45,7 @@ export class AuthRepository implements IAuthRepository {
   async update(userId: string, data: any) {
     const id = parseInt(userId, 10);
 
-    // Hash password before saving to repository
-    if (data.password) {
-      const hashedPassword = await bcrypt.hash(data.password, 10);
-      data.password = hashedPassword;
-    }
-
+    // Password hashing is handled in Service layer
     return this.prisma.user.update({
       where: { id },
       data: {

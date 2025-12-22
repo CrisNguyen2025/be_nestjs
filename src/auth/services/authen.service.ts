@@ -20,6 +20,38 @@ export class AuthenticationService {
     @Inject('REDIS_CLIENT') private redisClient: Redis,
   ) {}
 
+  async forgotPassword(email: string): Promise<{ message: string }> {
+    const user = await this.authRepo.findByEmail(email);
+
+    if (!user) {
+      // Security: Always return success to prevent enumeration
+      return {
+        message: 'If this email exists, a new password has been sent to it.',
+      };
+    }
+
+    // 1️⃣ Generate random password (10 chars)
+    const newPassword = Math.random().toString(36).slice(-10);
+
+    // 2️⃣ Hash the password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // 3️⃣ Update password in DB
+    await this.authRepo.updatePassword(user.id.toString(), hashedPassword);
+
+    // 4️⃣ Mock Email Sending (Send NEW PASSWORD)
+    console.log('----------------------------------------------------');
+    console.log(`📧 [MOCK EMAIL] New Password for ${email}: ${newPassword}`);
+    console.log(
+      '⚠️  Please change your password immediately after logging in.',
+    );
+    console.log('----------------------------------------------------');
+
+    return {
+      message: 'If this email exists, a new password has been sent to it.',
+    };
+  }
+
   async loginWithCredentials(
     data: LoginDto,
   ): Promise<IResponse<{ user: Omit<User, 'password'>; tokens: Tokens }>> {

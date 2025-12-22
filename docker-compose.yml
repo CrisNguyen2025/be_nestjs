@@ -26,7 +26,8 @@ services:
       - DATABASE_URL=postgresql://postgres:password@db:5432/postgres
       - REDIS_HOST=redis
     # Chạy ở chế độ Development (Hot Reload)
-    command: /bin/sh -c "npx prisma generate && npm run dev"
+    # Tự động đẩy schema vào DB (db push) và generate client mỗi khi khởi động
+    command: /bin/sh -c "npx prisma db push && npx prisma generate && npm run dev"
     # Nếu muốn chạy Production, hãy comment dòng trên và dùng dòng dưới (đồng thời bỏ volumes)
     # command: node dist/main
 
