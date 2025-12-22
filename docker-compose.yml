@@ -1,0 +1,75 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nestjs-app
+    ports:
+      - '4000:4000'
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - .:/app
+      - /app/node_modules
+    networks:
+      - nestjs-network
+    restart: always
+    environment:
+      # Override DATABASE_URL to use the internal docker host 'db' instead of localhost
+      - DATABASE_URL=postgresql://postgres:password@db:5432/postgres
+      - REDIS_HOST=redis
+    # Chạy ở chế độ Development (Hot Reload)
+    command: /bin/sh -c "npx prisma generate && npm run dev"
+    # Nếu muốn chạy Production, hãy comment dòng trên và dùng dòng dưới (đồng thời bỏ volumes)
+    # command: node dist/main
+
+  db:
+    image: postgres:16-alpine
+    container_name: postgres-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      POSTGRES_DB: postgres
+    ports:
+      - '5433:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - nestjs-network
+    restart: always
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - '6379:6379'
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - nestjs-network
+    restart: always
+
+volumes:
+  pgdata:
+  redisdata:
+
+networks:
+  nestjs-network:
+    driver: bridge
