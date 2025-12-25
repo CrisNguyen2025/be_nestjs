@@ -1,3 +1,4 @@
+import { IResponse } from 'src/common/dto/response.dto';
 import { ChangePasswordDto } from '../dto/change-pass.dto';
 import { CreateUserDto } from '../dto/create-user';
 import { LoginDto } from '../dto/login.dto';
@@ -20,7 +21,7 @@ export interface IAuthService {
   // Authentication & Registration
   loginWithCredentials(
     data: LoginDto,
-  ): Promise<Tokens & { user: Omit<User, 'password'> }>;
+  ): Promise<IResponse<{ user: Omit<User, 'password'>; tokens: Tokens }>>;
   registerWithCredentials(
     data: RegisterDto,
   ): Promise<Tokens & { message: string }>;

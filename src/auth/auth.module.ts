@@ -4,6 +4,7 @@ import { PrismaModule } from 'src/prisma/prisma.module';
 import { AuthController } from './auth.controller';
 import { AuthRepository } from './repositories/auth.repository';
 import { AuthenticationService } from './services/authen.service';
+import { EmailService } from './services/email.service';
 import { TokenManagementService } from './services/token-management.service';
 import { UtilitiesService } from './services/utilities.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
@@ -22,6 +23,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     AuthRepository,
     TokenManagementService,
     UtilitiesService,
+    EmailService,
     JwtStrategy,
   ],
   exports: [

@@ -9,14 +9,18 @@ import { CreateUserDto } from '../dto/create-user';
 import { LoginDto } from '../dto/login.dto';
 import { RegisterDto } from '../dto/register.dto';
 import { AuthRepository } from '../repositories/auth.repository';
+import { EmailService } from './email.service';
+import { TokenManagementService } from './token-management.service';
 
 type User = any;
 type Tokens = { access_token: string; refresh_token: string };
 @Injectable()
 export class AuthenticationService {
   constructor(
-    private jwtService: JwtService,
+    private readonly jwtService: JwtService,
     private readonly authRepo: AuthRepository,
+    private readonly tokenService: TokenManagementService,
+    private readonly emailService: EmailService,
     @Inject('REDIS_CLIENT') private redisClient: Redis,
   ) {}
 
@@ -39,13 +43,19 @@ export class AuthenticationService {
     // 3️⃣ Update password in DB
     await this.authRepo.updatePassword(user.id.toString(), hashedPassword);
 
-    // 4️⃣ Mock Email Sending (Send NEW PASSWORD)
-    console.log('----------------------------------------------------');
-    console.log(`📧 [MOCK EMAIL] New Password for ${email}: ${newPassword}`);
-    console.log(
-      '⚠️  Please change your password immediately after logging in.',
+    // 4️⃣ Send Email (SendGrid)
+    const emailSent = await this.emailService.sendNewPassword(
+      email,
+      newPassword,
     );
-    console.log('----------------------------------------------------');
+
+    if (!emailSent) {
+      console.log('----------------------------------------------------');
+      console.log(
+        `⚠️ [EMAIL FAILED] New Password for ${email}: ${newPassword}`,
+      );
+      console.log('----------------------------------------------------');
+    }
 
     return {
       message: 'If this email exists, a new password has been sent to it.',
