@@ -1,6 +1,7 @@
-import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ChangePasswordDto } from './dto/change-pass.dto';
+import { ConfirmEmailDto } from './dto/confirm-email.dto';
 import { CreateUserDto } from './dto/create-user';
 import { LoginDto } from './dto/login.dto';
 
@@ -13,6 +14,7 @@ import {
 } from './dto/forgot-password.dto';
 import { LogoutDto } from './dto/logout.dto';
 import { RefreshTokenDto, TokenResponseDto } from './dto/refresh-token.dto';
+import { VerifyEmailDto } from './dto/verify-email.dto';
 import { JwtAuthGuard } from './guard/jwt-auth.guard';
 import { AuthenticationService } from './services/authen.service';
 import { TokenManagementService } from './services/token-management.service';
@@ -36,9 +38,7 @@ export class AuthController {
     description: 'User successfully registered',
     schema: {
       example: {
-        access_token: 'ACCESS_TOKEN',
-        refresh_token: 'REFRESH_TOKEN',
-        message: 'User created successfully',
+        message: 'User registered successfully. Please verify your email.',
       },
     },
   })
@@ -144,6 +144,24 @@ export class AuthController {
   })
   async forgotPassword(@Body() dto: ForgotPasswordDto) {
     return this.authService.forgotPassword(dto.email);
+  }
+
+  @Post('verify-email')
+  @ApiOperation({ summary: 'Send email verification' })
+  async verifyEmail(@Body() dto: VerifyEmailDto) {
+    return this.authService.requestEmailVerification(dto);
+  }
+
+  @Post('confirm-email')
+  @ApiOperation({ summary: 'Confirm email verification' })
+  async confirmEmail(@Body() dto: ConfirmEmailDto) {
+    return this.authService.confirmEmail(dto);
+  }
+
+  @Get('confirm-email')
+  @ApiOperation({ summary: 'Confirm email verification via link' })
+  async confirmEmailFromLink(@Query() dto: ConfirmEmailDto) {
+    return this.authService.confirmEmail(dto);
   }
 
   // -------- Utilities --------

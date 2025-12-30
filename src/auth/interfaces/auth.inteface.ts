@@ -11,6 +11,7 @@ type Tokens = { access_token: string; refresh_token: string };
 // DB layer
 export interface IAuthRepository {
   findByEmail(email: string): Promise<User | null>;
+  findByEmailVerificationTokenHash(tokenHash: string): Promise<User | null>;
   createUser(data: CreateUserDto): Promise<User>;
   findById(userId: string): Promise<User | null>;
   update(userId: string, data: any): Promise<User>;
@@ -24,7 +25,7 @@ export interface IAuthService {
   ): Promise<IResponse<{ user: Omit<User, 'password'>; tokens: Tokens }>>;
   registerWithCredentials(
     data: RegisterDto,
-  ): Promise<Tokens & { message: string }>;
+  ): Promise<{ message: string; key?: string }>;
   loginWithProvider(
     idToken: string,
     profile: any,
@@ -42,10 +43,14 @@ export interface IAuthService {
 
   //forgot-password
   forgotPassword(email: string): Promise<{ message: string }>;
-  //reset-password
-  //verify-email
-  //confirm-email
-  //sessions
+  requestEmailVerification(data: {
+    email: string;
+  }): Promise<{ message: string }>;
+  confirmEmail(data: {
+    token?: string;
+    email?: string;
+    code?: string;
+  }): Promise<{ message: string }>;
 
   // Utilities
   checkEmail(email: string): Promise<{ message: string; value: number }>;

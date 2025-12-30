@@ -13,6 +13,12 @@ export class AuthRepository implements IAuthRepository {
     return this.prisma.user.findUnique({ where: { email } });
   }
 
+  async findByEmailVerificationTokenHash(tokenHash: string) {
+    return this.prisma.user.findFirst({
+      where: { emailVerifyTokenHash: tokenHash },
+    });
+  }
+
   // 2. Create user with ACCOUNT/PASSWORD (registerWithCredentials)
   async createUser(data: CreateUserDto) {
     // Password should be hashed by the Service layer before reaching here
