@@ -1,5 +1,6 @@
-import { Body, Controller, Get, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { ChangePasswordDto } from './dto/change-pass.dto';
 import { ConfirmEmailDto } from './dto/confirm-email.dto';
 import { CreateUserDto } from './dto/create-user';
@@ -74,8 +75,7 @@ export class AuthController {
   // -------- Token & User Management --------
   @Post('logout')
   @UseGuards(JwtAuthGuard)
-  async logout(@Body() dto: LogoutDto, @Req() req: any) {
-    const userId = req.user.userId;
+  async logout(@Body() dto: LogoutDto, @CurrentUser('userId') userId: string) {
     return this.authService.logout(userId, dto.refresh_token);
   }
 
@@ -117,18 +117,16 @@ export class AuthController {
   @Get('me')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Get current user info' })
-  async getMe(@Req() req: any) {
-    const userId = req.user.userId;
+  async getMe(@CurrentUser('userId') userId: string) {
     return this.tokenService.getMe({ userId });
   }
 
   @Post('change-password')
   @UseGuards(JwtAuthGuard)
   async changePassword(
-    @Req() req: any,
+    @CurrentUser('userId') userId: string,
     @Body() dto: ChangePasswordDto,
   ): Promise<IResponse<{ message: string }>> {
-    const userId = req.user.userId;
     const result = await this.tokenService.changePassword(userId, dto);
     return { success: true, data: result };
   }

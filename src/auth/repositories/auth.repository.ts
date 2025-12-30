@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Role } from '@prisma/client';
+import { Prisma, Role } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateUserDto } from '../dto/create-user';
 import { IAuthRepository } from '../interfaces/auth.inteface'; // Đã cập nhật IAuthRepository
@@ -48,7 +48,7 @@ export class AuthRepository implements IAuthRepository {
   }
 
   // 4. update user (update, use for changePassword)
-  async update(userId: string, data: any) {
+  async update(userId: string, data: Prisma.UserUpdateInput) {
     const id = parseInt(userId, 10);
 
     // Password hashing is handled in Service layer

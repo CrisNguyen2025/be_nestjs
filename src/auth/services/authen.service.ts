@@ -1,4 +1,9 @@
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  Logger,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { randomInt, randomUUID } from 'crypto';
@@ -27,6 +32,8 @@ export class AuthenticationService {
     @Inject('REDIS_CLIENT') private redisClient: Redis,
   ) {}
 
+  private readonly logger = new Logger(AuthenticationService.name);
+
   async forgotPassword(email: string): Promise<{ message: string }> {
     const user = await this.authRepo.findByEmail(email);
 
@@ -53,11 +60,9 @@ export class AuthenticationService {
     );
 
     if (!emailSent) {
-      console.log('----------------------------------------------------');
-      console.log(
+      this.logger.error(
         `⚠️ [EMAIL FAILED] New Password for ${email}: ${newPassword}`,
       );
-      console.log('----------------------------------------------------');
     }
 
     return {
@@ -71,15 +76,18 @@ export class AuthenticationService {
     const user = await this.authRepo.findByEmail(data.email);
 
     if (!user) {
+      // Prevents enumeration attack
       throw new BadRequestException({
-        message: 'User not found',
-        field: 'email',
-        key: 'user_not_found',
+        message: 'Invalid credentials',
+        key: 'invalid_credentials',
       });
     }
 
     if (!user.password) {
-      throw new BadRequestException('Account created with social login');
+      throw new BadRequestException({
+        message: 'Invalid credentials', // Generic message
+        key: 'invalid_credentials',
+      });
     }
 
     const isMatch = await bcrypt.compare(data.password, user.password);
@@ -267,11 +275,9 @@ export class AuthenticationService {
     );
 
     if (!emailSent) {
-      console.log('----------------------------------------------------');
-      console.log(
+      this.logger.error(
         `⚠️ [EMAIL FAILED] Verify ${user.email}: token=${token} code=${code}`,
       );
-      console.log('----------------------------------------------------');
     }
   }
 
