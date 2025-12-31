@@ -30,7 +30,6 @@ export class AuthController {
     private readonly utilService: UtilitiesService,
   ) {}
 
-  // -------- Authentication --------
   @Post('register')
   @ApiOperation({ summary: 'Register a new user' })
   @ApiBody({ type: CreateUserDto })
@@ -66,13 +65,6 @@ export class AuthController {
     return this.authService.loginWithCredentials(data);
   }
 
-  // @Post('login/social')
-  // @ApiOperation({ summary: 'Login via social provider' })
-  // async loginWithProvider(@Body() body: { idToken: string; profile: any }) {
-  //   return this.authService.loginWithProvider(body.idToken, body.profile);
-  // }
-
-  // -------- Token & User Management --------
   @Post('logout')
   @UseGuards(JwtAuthGuard)
   async logout(@Body() dto: LogoutDto, @CurrentUser('userId') userId: string) {
@@ -162,7 +154,6 @@ export class AuthController {
     return this.authService.confirmEmail(dto);
   }
 
-  // -------- Utilities --------
   @Post('check-email')
   @ApiOperation({ summary: 'Check if email exists' })
   @ApiResponse({ status: 200, type: CheckEmailResponseDto })

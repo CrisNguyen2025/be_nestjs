@@ -16,12 +16,11 @@ import { CreateUserDto } from '../dto/create-user';
 import { LoginDto } from '../dto/login.dto';
 import { RegisterDto } from '../dto/register.dto';
 import { VerifyEmailDto } from '../dto/verify-email.dto';
+import { Tokens, User } from '../interfaces/auth.inteface';
 import { AuthRepository } from '../repositories/auth.repository';
 import { EmailService } from './email.service';
 import { TokenManagementService } from './token-management.service';
 
-type User = any;
-type Tokens = { access_token: string; refresh_token: string };
 @Injectable()
 export class AuthenticationService {
   constructor(
@@ -44,16 +43,12 @@ export class AuthenticationService {
       };
     }
 
-    // 1️⃣ Generate random password (10 chars)
     const newPassword = Math.random().toString(36).slice(-10);
 
-    // 2️⃣ Hash the password
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-    // 3️⃣ Update password in DB
     await this.authRepo.updatePassword(user.id.toString(), hashedPassword);
 
-    // 4️⃣ Send Email (SendGrid)
     const emailSent = await this.emailService.sendNewPassword(
       email,
       newPassword,
@@ -76,7 +71,6 @@ export class AuthenticationService {
     const user = await this.authRepo.findByEmail(data.email);
 
     if (!user) {
-      // Prevents enumeration attack
       throw new BadRequestException({
         message: 'Invalid credentials',
         key: 'invalid_credentials',
@@ -85,7 +79,6 @@ export class AuthenticationService {
 
     if (!user.password) {
       throw new BadRequestException({
-        message: 'Invalid credentials', // Generic message
         key: 'invalid_credentials',
       });
     }
@@ -107,14 +100,12 @@ export class AuthenticationService {
 
     const { password, ...safeUser } = user;
 
-    // 1️⃣ Generate tokens
     const { access_token, refresh_token, jti } = TokenHelper.generateTokens(
       this.jwtService,
       user.id,
       user.email,
     );
 
-    // 2️⃣ Store hashed refresh token in Redis
     await SessionHelper.addSession(
       this.redisClient,
       user.id.toString(),
@@ -123,14 +114,12 @@ export class AuthenticationService {
       7 * 24 * 60 * 60,
     );
 
-    // Enforce max 2 sessions
     await SessionHelper.enforceSessionLimit(
       this.redisClient,
       user.id.toString(),
       2,
     );
 
-    // 3️⃣ Return tokens
     return {
       success: true,
       data: {
@@ -285,13 +274,11 @@ export class AuthenticationService {
     idToken: string,
     profile: any,
   ): Promise<Tokens & { user: User }> {
-    // TODO: verify idToken, fetch/create user from profile
     let user = await this.authRepo.findByEmail(profile.email);
     if (!user) {
       user = await this.authRepo.createUser({
         email: profile.email,
-
-        password: '', // social login, no password
+        password: '',
       } as CreateUserDto);
     }
 
@@ -312,7 +299,6 @@ export class AuthenticationService {
         secret: process.env.JWT_REFRESH_SECRET,
       });
     } catch (err) {
-      // Token không hợp lệ vẫn có thể coi là "logged out"
       return { message: 'Refresh token not found or already invalidated' };
     }
 

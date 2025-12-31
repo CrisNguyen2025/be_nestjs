@@ -7,15 +7,9 @@ export class EmailService {
   private useSendGrid = false;
 
   constructor() {
-    // Kiểm tra SendGrid
     if (process.env.SENDGRID_API_KEY) {
       this.logger.log('✅ SendGrid configured');
       sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-      console.log(
-        '🚀 ~ EmailService ~ constructor ~ env.SENDGRID_API_KEY:',
-        process.env.SENDGRID_API_KEY,
-      );
-
       this.useSendGrid = true;
     } else {
       this.logger.warn('⚠️  SENDGRID_API_KEY not found');
@@ -164,7 +158,6 @@ ${brandName} Team
 </html>
 `.trim();
 
-    // SendGrid
     if (this.useSendGrid) {
       try {
         if (!fromEmail) throw new Error('Missing SENDGRID_FROM_EMAIL');
