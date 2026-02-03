@@ -22,7 +22,9 @@ export class RefreshTokenGuard implements CanActivate {
     const token = authHeader.replace('Bearer ', '');
 
     try {
-      const payload = this.jwtService.verify(token); // Không truyền secret nếu đã config
+      const payload = this.jwtService.verify(token, {
+        secret: process.env.JWT_REFRESH_SECRET,
+      });
       request.user = { userId: payload.sub, email: payload.email, token };
       return true;
     } catch (e) {

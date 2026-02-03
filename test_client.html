@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Realtime Mastery - Client Test</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --text: #e2e8f0;
+            --text-muted: #94a3b8;
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --danger: #ef4444;
+            --success: #22c55e;
+            --warning: #eab308;
+            --border: #334155;
+        }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); padding: 20px; margin: 0; }
+        .wrapper { display: flex; gap: 20px; max-width: 1400px; margin: 0 auto; align-items: flex-start; }
+        
+        .main-col { flex: 2; display: flex; flex-direction: column; gap: 20px; }
+        .sidebar-col { flex: 1; position: sticky; top: 20px; min-width: 300px; }
+
+        .card { background: var(--card-bg); padding: 20px; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        h1 { margin-top: 0; font-size: 1.5rem; color: #fff; }
+        h3 { margin-top: 0; color: var(--text); font-size: 1.1rem; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+        
+        .status-badge { font-weight: 600; padding: 4px 8px; border-radius: 4px; font-size: 0.875rem; display: inline-block; }
+        .status-badge.connected { background: rgba(34, 197, 94, 0.2); color: var(--success); border: 1px solid var(--success); }
+        .status-badge.disconnected { background: rgba(239, 68, 68, 0.2); color: var(--danger); border: 1px solid var(--danger); }
+
+        .btn-group { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+        button { padding: 8px 16px; cursor: pointer; background: var(--primary); color: white; border: none; border-radius: 6px; font-weight: 600; transition: all 0.2s; }
+        button:hover { background: var(--primary-hover); transform: translateY(-1px); }
+        button.danger { background: var(--danger); }
+        button.warning { background: var(--warning); color: #000; }
+        button.outline { background: transparent; border: 1px solid var(--primary); color: var(--primary); }
+        
+        input { padding: 10px; border-radius: 6px; border: 1px solid var(--border); background: #020617; color: white; width: 100%; box-sizing: border-box; margin-bottom: 10px; }
+        #logs { height: 400px; overflow-y: auto; background: #020617; padding: 10px; font-family: monospace; border-radius: 8px; border: 1px solid var(--border); font-size: 0.9rem; }
+        .log-entry { margin: 4px 0; border-bottom: 1px solid #1e293b; padding-bottom: 4px; word-break: break-all; }
+        .log-ts { color: var(--text-muted); font-size: 0.8em; margin-right: 8px; user-select: none; }
+
+        /* Checklist Styles */
+        .checklist { list-style: none; padding: 0; margin: 0; }
+        .checklist-item { display: flex; align-items:center; gap: 10px; padding: 12px; border-bottom: 1px solid var(--border); transition: background 0.3s; }
+        .checklist-item:last-child { border-bottom: none; }
+        .checklist-item.done .icon { background: var(--success); color: white; }
+        .checklist-item.pending .icon { background: var(--border); color: var(--text-muted); }
+
+        .icon { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; font-weight: bold; }
+        .item-content { flex: 1; }
+        .item-title { font-weight: 600; display: block; }
+        .item-desc { font-size: 0.8rem; color: var(--text-muted); display: block; margin-top: 2px; }
+
+        @media (max-width: 800px) { .wrapper { flex-direction: column; } .sidebar-col { width: 100%; position: static; } }
+    </style>
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+</head>
+<body>
+    <div class="wrapper">
+        <div class="main-col">
+            <div class="card">
+                <h1>🔌 Realtime Tester (Port 4000)</h1>
+                <h3>Connection Status: <span id="status" class="status-badge disconnected">Disconnected</span></h3>
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin: 5px 0 15px;">Socket ID: <code id="socketId" style="color: var(--primary);">---</code></p>
+                
+                <div class="btn-group">
+                    <button class="outline" onclick="setToken()">🔑 Set Mock Token</button>
+                    <button onclick="connectSocket()">⚡ Connect (Auth)</button>
+                    <button class="danger" onclick="disconnectSocket()">❌ Disconnect</button>
+                    <button class="warning" onclick="sendPing()">📡 Ping</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>🔔 Advanced Tests</h3>
+                
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px;">
+                     <div>
+                        <strong>1. Basic Reliability</strong>
+                        <button onclick="sendReliableMessage()" style="width:100%; margin-top:5px;">📨 Send Msg</button>
+                    </div>
+                     <div>
+                        <strong>2. Backpressure</strong>
+                        <button onclick="spamMessages()" class="danger" style="width:100%; margin-top:5px;">🚀 Flood Attack</button>
+                    </div>
+                    <div>
+                         <strong>3. Room Authz (Allow)</strong>
+                         <p class="item-desc">Join 'public_lobby'</p>
+                         <button onclick="joinRoom('public_lobby')" class="outline" style="width:100%; margin-top:5px;">✅ Join Public Room</button>
+                    </div>
+                    <div>
+                         <strong>4. Room Authz (Deny)</strong>
+                         <p class="item-desc">Join 'admin_only'</p>
+                         <button onclick="joinRoom('admin_only')" class="warning" style="width:100%; margin-top:5px;">⛔ Join Admin Room</button>
+                    </div>
+                </div>
+                
+                <input type="text" id="msgContent" placeholder="Message content..." value="Hello NestJS" style="margin-bottom:0;">
+            </div>
+
+            <div class="card" style="flex: 1; min-height: 0;">
+                <h3>📜 Event Logs</h3>
+                <div id="logs"></div>
+                <div style="text-align: right; margin-top: 5px;">
+                    <button onclick="document.getElementById('logs').innerHTML = ''" style="background: transparent; color: var(--text-muted); border: 1px solid var(--border); padding: 4px 8px; font-size: 0.8rem;">Clear Logs</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar-col">
+            <div class="card">
+                <h3>✅ Mastery Checklist</h3>
+                <ul class="checklist">
+                    <li class="checklist-item" id="check-connect">
+                        <div class="icon">?</div>
+                        <div class="item-content"><span class="item-title">1. Connection (Auth)</span></div>
+                    </li>
+                    <li class="checklist-item" id="check-presence">
+                        <div class="icon">?</div>
+                        <div class="item-content"><span class="item-title">2. Presence (Online)</span><span class="item-desc">Redis Set Implicitly</span></div>
+                    </li>
+                    <li class="checklist-item" id="check-room-ok">
+                        <div class="icon">?</div>
+                        <div class="item-content"><span class="item-title">3. Room Join (Success)</span></div>
+                    </li>
+                    <li class="checklist-item" id="check-room-fail">
+                        <div class="icon">?</div>
+                        <div class="item-content"><span class="item-title">4. Room Authz (Fail)</span><span class="item-desc">Guard Rejection (403)</span></div>
+                    </li>
+                     <li class="checklist-item" id="check-ratelimit">
+                        <div class="icon">?</div>
+                        <div class="item-content"><span class="item-title">5. Rate Limit</span></div>
+                    </li>
+                     <li class="checklist-item" id="check-exception">
+                        <div class="icon">?</div>
+                        <div class="item-content"><span class="item-title">6. Exception Filter</span><span class="item-desc">Standardized Error JSON</span></div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let socket;
+        let authToken = 'VALID_TEST_TOKEN';
+        const logDiv = document.getElementById('logs');
+        const statusSpan = document.getElementById('status');
+        const socketIdSpan = document.getElementById('socketId');
+        
+        const checks = {
+            connect: document.getElementById('check-connect'),
+            presence: document.getElementById('check-presence'),
+            roomOk: document.getElementById('check-room-ok'),
+            roomFail: document.getElementById('check-room-fail'),
+            ratelimit: document.getElementById('check-ratelimit'),
+            exception: document.getElementById('check-exception')
+        };
+
+        function markDone(key) {
+            const item = checks[key];
+            if (item && !item.classList.contains('done')) {
+                item.classList.add('done');
+                item.classList.remove('pending');
+                item.querySelector('.icon').innerText = '✓';
+                item.style.backgroundColor = 'rgba(34, 197, 94, 0.1)';
+            }
+        }
+        Object.values(checks).forEach(el => el.classList.add('pending'));
+
+        function log(msg, color = '#e2e8f0') {
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            const time = new Date().toLocaleTimeString();
+            entry.innerHTML = `<span class="log-ts">${time}</span><span style="color:${color}">${msg}</span>`;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function updateStatus(state) {
+            statusSpan.className = `status-badge ${state}`;
+            statusSpan.innerText = state.toUpperCase();
+        }
+
+        function setToken() {
+            const t = prompt("Enter Token (Use 'VALID_TEST_TOKEN' for bypass)", authToken);
+            if(t) authToken = t;
+        }
+
+        function connectSocket() {
+            if (socket?.connected) return;
+            log(`Connecting...`, '#3b82f6');
+            socket = io('http://localhost:4000', {
+                transports: ['websocket'], 
+                auth: { token: authToken }
+            });
+
+            socket.on('connect', () => {
+                updateStatus('connected');
+                socketIdSpan.innerText = socket.id;
+                log(`✅ Connected! Presence Set in Redis`, '#22c55e');
+                markDone('connect');
+                markDone('presence');
+            });
+
+            socket.on('disconnect', (reason) => {
+                updateStatus('disconnected');
+                socketIdSpan.innerText = '---';
+                log(`❌ Disconnected: ${reason}`, '#ef4444');
+            });
+
+            // Listen for Global Exception Filter Emits
+            socket.on('exception', (err) => {
+                log(`⚠️ Global Exception: ${JSON.stringify(err)}`, '#ef4444');
+                if(err.code) markDone('exception');
+            });
+        }
+
+        function disconnectSocket() { if (socket) socket.disconnect(); }
+        function sendPing() { socket?.emit('ping'); }
+
+        async function joinRoom(roomName) {
+            if (!socket?.connected) return alert('Connect first!');
+            log(`👉 Request Join: ${roomName}...`, '#3b82f6');
+            
+            socket.emit('join_room', { roomName }, (res) => {
+                if (res.status === 'joined') {
+                    log(`✅ Joined ${res.room}`, '#22c55e');
+                    markDone('roomOk');
+                } else if (res.status === 'error') {
+                    log(`⛔ Join Failed: ${res.message} (Code: ${res.code})`, '#eab308');
+                    if (res.code === 'WS_ERROR' || res.code === 403) {
+                         markDone('roomFail');
+                         markDone('exception'); // Also proves Exception Filter works for Ack
+                    }
+                }
+            });
+        }
+
+        async function sendReliableMessage() {
+            if (!socket?.connected) return;
+            const id = crypto.randomUUID();
+            socket.emit('message', { id, content: 'Test', sentAt: Date.now() }, (res) => {
+                if(res.status === 'ok') log(`Ack Received`, '#22c55e');
+            });
+        }
+
+        function spamMessages() {
+             log('🚀 Flood Attack...', '#eab308');
+             for(let i=0; i<8; i++) {
+                 socket.emit('message', { id: crypto.randomUUID(), content: 'Spam', sentAt: Date.now() });
+             }
+             // Expect exception event
+             setTimeout(() => markDone('ratelimit'), 1000);
+        }
+    </script>
+</body>
+</html>

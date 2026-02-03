@@ -29,6 +29,8 @@ export interface IAuthRepository {
   findByEmailVerificationTokenHash(tokenHash: string): Promise<User | null>;
   createUser(data: CreateUserDto): Promise<User>;
   findById(userId: string): Promise<User | null>;
+  findPublicById(userId: string): Promise<User | null>;
+  findByIdWithPassword(userId: string): Promise<User | null>;
   update(userId: string, data: any): Promise<User>;
 }
 

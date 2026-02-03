@@ -9,6 +9,11 @@ export class JwtRefreshStrategy extends PassportStrategy(
   'jwt-refresh',
 ) {
   constructor() {
+    if (!process.env.JWT_REFRESH_SECRET) {
+      throw new Error(
+        'JWT_REFRESH_SECRET is not defined in environment variables',
+      );
+    }
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       secretOrKey: process.env.JWT_REFRESH_SECRET!,

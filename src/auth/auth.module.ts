@@ -7,6 +7,8 @@ import { AuthenticationService } from './services/authen.service';
 import { EmailService } from './services/email.service';
 import { TokenManagementService } from './services/token-management.service';
 import { UtilitiesService } from './services/utilities.service';
+import { GoogleStrategy } from './strategies/google.strategy';
+import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
 
 @Module({
@@ -25,6 +27,12 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     UtilitiesService,
     EmailService,
     JwtStrategy,
+    ...(process.env.JWT_REFRESH_SECRET ? [JwtRefreshStrategy] : []),
+    ...(process.env.GOOGLE_CLIENT_ID &&
+    process.env.GOOGLE_CLIENT_SECRET &&
+    process.env.GOOGLE_CALLBACK_URL
+      ? [GoogleStrategy]
+      : []),
   ],
   exports: [
     AuthenticationService,
@@ -32,6 +40,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     TokenManagementService,
     UtilitiesService,
     JwtStrategy,
+    JwtModule,
   ],
 })
 export class AuthModule {}

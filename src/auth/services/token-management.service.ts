@@ -66,17 +66,19 @@ export class TokenManagementService {
       'EX',
       TokenHelper.REFRESH_TTL,
     );
+    multi.zrem(`user:sessions:${user.id.toString()}`, jti);
+    multi.zadd(`user:sessions:${user.id.toString()}`, Date.now(), newJti);
     await multi.exec();
 
     return {
       access_token,
       refresh_token: newRefreshToken,
-      expires_in: 900, // 15 minutes
+      expires_in: TokenHelper.ACCESS_TTL,
     };
   }
 
   async getMe(user: { userId: string }): Promise<User> {
-    const foundUser = await this.authRepo.findById(user.userId);
+    const foundUser = await this.authRepo.findPublicById(user.userId);
     if (!foundUser) throw new UnauthorizedException('User not found');
     return foundUser;
   }

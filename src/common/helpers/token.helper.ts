@@ -2,6 +2,7 @@ import { JwtService } from '@nestjs/jwt';
 import { createHash, randomUUID } from 'crypto';
 
 export class TokenHelper {
+  static ACCESS_TTL = 60 * 15; // 15 minutes
   static REFRESH_TTL = 60 * 60 * 24 * 7; // 7 days
 
   static hashToken(token: string) {
@@ -12,8 +13,8 @@ export class TokenHelper {
     const jti = randomUUID();
 
     const access_token = jwtService.sign(
-      { sub: userId, email },
-      { expiresIn: '15m' },
+      { sub: userId, email, jti },
+      { expiresIn: this.ACCESS_TTL },
     );
 
     const refresh_token = jwtService.sign(

@@ -20,7 +20,7 @@ export function validationPipeRules(): ValidationPipe {
     skipUndefinedProperties: false,
 
     stopAtFirstError: false,
-    errorHttpStatusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+    errorHttpStatusCode: HttpStatus.BAD_REQUEST,
 
     exceptionFactory: (errors) => {
       let customErrors = errors.flatMap((err) => {

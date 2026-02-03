@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Mastery - Persistence Test</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --text: #e2e8f0;
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --danger: #ef4444;
+            --success: #22c55e;
+            --border: #334155;
+            --msg-sent: #3b82f6;
+            --msg-recv: #475569;
+        }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); padding: 20px; overflow-y: hidden; height: 100vh; display: flex; flex-direction: column; }
+        
+        .header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+        h1 { margin: 0; font-size: 1.25rem; }
+        
+        .chat-container { flex: 1; display: flex; gap: 20px; margin-top: 20px; min-height: 0; }
+        
+        .room-panel { width: 250px; background: var(--card-bg); border-radius: 12px; border: 1px solid var(--border); padding: 15px; display: flex; flex-direction: column; }
+        .room-item { padding: 10px; cursor: pointer; border-radius: 6px; transition: 0.2s; margin-bottom: 5px; }
+        .room-item:hover { background: rgba(255,255,255,0.05); }
+        .room-item.active { background: var(--primary); color: white; }
+
+        .chat-panel { flex: 1; display: flex; flex-direction: column; background: var(--card-bg); border-radius: 12px; border: 1px solid var(--border); overflow: hidden; }
+        
+        .messages-area { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+        
+        .message-bubble { max-width: 70%; padding: 10px 14px; border-radius: 12px; line-height: 1.4; position: relative; }
+        .message-bubble.sent { align-self: flex-end; background: var(--msg-sent); color: white; border-bottom-right-radius: 2px; }
+        .message-bubble.recv { align-self: flex-start; background: var(--msg-recv); color: white; border-bottom-left-radius: 2px; }
+        .meta { font-size: 0.7rem; opacity: 0.7; margin-top: 4px; display: block; }
+        
+        .input-area { padding: 20px; border-top: 1px solid var(--border); display: flex; gap: 10px; }
+        input { flex: 1; padding: 12px; border-radius: 6px; border: 1px solid var(--border); background: #020617; color: white; }
+        button { padding: 0 20px; background: var(--primary); color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; }
+        button:hover { background: var(--primary-hover); }
+
+        .sys-msg { text-align: center; color: #94a3b8; font-size: 0.8rem; margin: 10px 0; }
+    </style>
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+</head>
+<body>
+    <div class="header">
+        <div>
+            <h1>💬 Persistent Chat</h1>
+            <small style="color: #94a3b8">Test streaming history & persistence</small>
+        </div>
+        <div id="status">🔴 Disconnected</div>
+    </div>
+
+    <div class="chat-container">
+        <div class="room-panel">
+            <h3>Rooms</h3>
+            <div class="room-item active" onclick="switchRoom('public_lobby')"># public_lobby</div>
+            <div class="room-item" onclick="switchRoom('public_dev')"># public_dev</div>
+        </div>
+
+        <div class="chat-panel">
+            <div class="messages-area" id="messages">
+                <div class="sys-msg">Select a room to join and load history...</div>
+            </div>
+            <div class="input-area">
+                <input type="text" id="msgInput" placeholder="Type a message..." onkeypress="handleEnter(event)">
+                <button onclick="sendMessage()">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Use ID 3 as verified from seed
+        const MY_ID = 3; 
+        const AUTH_TOKEN = 'VALID_TEST_TOKEN';
+        
+        let socket;
+        let currentRoom = '';
+
+        function connect() {
+            socket = io('http://localhost:4000', {
+                transports: ['websocket'],
+                auth: { token: AUTH_TOKEN }
+            });
+
+            socket.on('connect', () => {
+                document.getElementById('status').innerText = '🟢 Connected';
+                // Auto join lobby
+                switchRoom('public_lobby');
+            });
+
+            socket.on('disconnect', () => {
+                document.getElementById('status').innerText = '🔴 Disconnected';
+            });
+
+            socket.on('message', (msg) => {
+                // Only show if matches current room
+                // (Note: In a real app we would check msg.room, but for now we broadcast to public_lobby hardcoded in BE for demo)
+                // We'll trust the broadcast for now but client should filter.
+                addMessage(msg.content, msg.senderId === MY_ID, msg.sentAt);
+            });
+
+            socket.on('room_history', (data) => {
+                if(data.room !== currentRoom) return; // ignore race conditions
+                
+                const msgsDiv = document.getElementById('messages');
+                msgsDiv.innerHTML = '<div class="sys-msg">History Loaded</div>';
+                
+                // data.messages is array from DB (newest first usually in queries, need to check sort)
+                // DB query was: orderBy: { createdAt: 'desc' }
+                // So we need to reverse to show oldest -> newest
+                const sorted = [...data.messages].reverse();
+                
+                sorted.forEach(m => {
+                    addMessage(m.content, m.senderId === MY_ID, new Date(m.createdAt).getTime());
+                });
+                
+                scrollToBottom();
+            });
+            
+            socket.on('exception', (e) => alert('Error: ' + e.message));
+        }
+
+        function switchRoom(roomName) {
+            if(!socket?.connected) return;
+            currentRoom = roomName;
+            
+            // Clear UI
+            document.getElementById('messages').innerHTML = '<div class="sys-msg">Joining ' + roomName + '...</div>';
+            
+            // Update Active State
+            document.querySelectorAll('.room-item').forEach(el => {
+                el.classList.toggle('active', el.innerText.includes(roomName));
+            });
+
+            // Emit Join
+            socket.emit('join_room', { roomName }, (res) => {
+                if(res.status === 'joined') {
+                    // console.log('Joined');
+                }
+            });
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('msgInput');
+            const text = input.value.trim();
+            if(!text) return;
+
+            const id = crypto.randomUUID();
+            const now = Date.now();
+
+            // Optimistic Update
+            // addMessage(text, true, now);
+            
+            socket.emit('message', { id, content: text, sentAt: now }, (ack) => {
+                if(ack.status !== 'ok') {
+                    alert('Failed to send');
+                }
+            });
+            
+            input.value = '';
+        }
+
+        function addMessage(text, isMe, timestamp) {
+            const div = document.createElement('div');
+            div.className = `message-bubble ${isMe ? 'sent' : 'recv'}`;
+            const timeStr = new Date(timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            div.innerHTML = `${text} <span class="meta">${timeStr}</span>`;
+            document.getElementById('messages').appendChild(div);
+            scrollToBottom();
+        }
+
+        function scrollToBottom() {
+            const el = document.getElementById('messages');
+            el.scrollTop = el.scrollHeight;
+        }
+
+        function handleEnter(e) {
+            if(e.key === 'Enter') sendMessage();
+        }
+
+        // Init
+        connect();
+    </script>
+</body>
+</html>

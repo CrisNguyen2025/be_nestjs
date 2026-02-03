@@ -1,4 +1,4 @@
-import * as bcrypt from 'bcrypt';
+import { TokenHelper } from './token.helper';
 
 export class SessionHelper {
   /**
@@ -11,7 +11,7 @@ export class SessionHelper {
     refreshToken: string,
     ttlSeconds: number,
   ) {
-    const hashed = await bcrypt.hash(refreshToken, 10);
+    const hashed = TokenHelper.hashToken(refreshToken);
 
     // 1️⃣ Store refresh token
     await redis.set(`refresh:${userId}:${jti}`, hashed, 'EX', ttlSeconds);
@@ -39,7 +39,12 @@ export class SessionHelper {
       await redis.del(`refresh:${userId}:${jti}`);
 
       // ❌ revoke access token
-      await redis.set(`bl:access:${jti}`, '1', 'EX', 60 * 60);
+      await redis.set(
+        `bl:access:${jti}`,
+        '1',
+        'EX',
+        TokenHelper.ACCESS_TTL,
+      );
 
       // ❌ remove session
       await redis.zrem(sessionKey, jti);
@@ -55,7 +60,12 @@ export class SessionHelper {
 
     for (const jti of jtis) {
       await redis.del(`refresh:${userId}:${jti}`);
-      await redis.set(`bl:access:${jti}`, '1', 'EX', 60 * 60);
+      await redis.set(
+        `bl:access:${jti}`,
+        '1',
+        'EX',
+        TokenHelper.ACCESS_TTL,
+      );
     }
 
     await redis.del(sessionKey);
@@ -72,7 +82,12 @@ export class SessionHelper {
       if (jti === currentJti) continue;
 
       await redis.del(`refresh:${userId}:${jti}`);
-      await redis.set(`bl:access:${jti}`, '1', 'EX', 60 * 60);
+      await redis.set(
+        `bl:access:${jti}`,
+        '1',
+        'EX',
+        TokenHelper.ACCESS_TTL,
+      );
       await redis.zrem(sessionKey, jti);
     }
   }

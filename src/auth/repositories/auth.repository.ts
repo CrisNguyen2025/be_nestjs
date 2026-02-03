@@ -47,6 +47,22 @@ export class AuthRepository implements IAuthRepository {
     });
   }
 
+  async findPublicById(userId: string) {
+    const id = parseInt(userId, 10);
+    return this.prisma.user.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        emailVerified: true,
+        emailVerifiedAt: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+  }
+
   async update(userId: string, data: Prisma.UserUpdateInput) {
     const id = parseInt(userId, 10);
 
@@ -67,6 +83,7 @@ export class AuthRepository implements IAuthRepository {
         email: true,
         role: true,
         password: true,
+        emailVerified: true,
         createdAt: true,
         updatedAt: true,
       },

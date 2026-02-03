@@ -111,7 +111,7 @@ export class AuthenticationService {
       user.id.toString(),
       jti,
       refresh_token,
-      7 * 24 * 60 * 60,
+      TokenHelper.REFRESH_TTL,
     );
 
     await SessionHelper.enforceSessionLimit(
@@ -308,22 +308,23 @@ export class AuthenticationService {
     }
 
     const key = `refresh:${userId}:${jti}`;
-    const deleted = await this.redisClient.del(key);
+    const stored = await this.redisClient.get(key);
 
-    if (!deleted) {
+    if (!stored || stored !== TokenHelper.hashToken(refreshToken)) {
       return { message: 'Refresh token not found or already invalidated' };
     }
+
+    const multi = this.redisClient.multi();
+    multi.del(key);
+    multi.zrem(`user:sessions:${userId}`, jti);
+    multi.set(`bl:access:${jti}`, '1', 'EX', TokenHelper.ACCESS_TTL);
+    await multi.exec();
 
     return { message: 'Logged out successfully' };
   }
 
   async forceLogout(userId: string): Promise<{ message: string }> {
-    const pattern = `refresh:${userId}:*`;
-    const keys = await this.redisClient.keys(pattern);
-
-    if (keys.length > 0) {
-      await this.redisClient.del(keys);
-    }
+    await SessionHelper.forceLogoutAll(this.redisClient, userId);
 
     return { message: 'Logged out from all devices successfully' };
   }

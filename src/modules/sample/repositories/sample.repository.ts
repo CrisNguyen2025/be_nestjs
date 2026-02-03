@@ -30,8 +30,4 @@ export class SampleRepository implements ISampleRepository {
   async remove(id: number) {
     return this.prisma.sample.delete({ where: { id } });
   }
-
-  async sssssss() {
-    return this.prisma.sample.deleteMany();
-  }
 }
